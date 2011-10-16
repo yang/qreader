@@ -19,6 +19,9 @@ public class Reader extends Activity {
 
   private void d(Object o) { Log.d("qreader", o.toString()); }
 
+  private int curText;
+  private String[] texts;
+
   /** Called when the activity is first created. */
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -63,6 +66,8 @@ public class Reader extends Activity {
     }
     cursor.close();
 
+    texts = getResources().getStringArray(R.array.texts);
+
     tts = new TextToSpeech(this, new OnInitListener() {
 
       @Override
@@ -73,17 +78,28 @@ public class Reader extends Activity {
             d("done " + utteranceId + " isSpeaking=" + tts.isSpeaking());
             tts.stop();
             //Uri uri = MediaStore.Audio.Playlists.Members.getContentUri("external", );
+            go();
           }
         });
-        HashMap<String, String> params = new HashMap<String, String>();
-        params.put(Engine.KEY_PARAM_UTTERANCE_ID, "greeting");
-        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
-        dir.mkdirs();
-        if (tts.synthesizeToFile("Hi there", params, dir + "/hithere.wav") == TextToSpeech.ERROR) {
-          throw new RuntimeException();
-        }
+        go();
       }
     });
+  }
+
+  private void go() {
+    if (curText < texts.length) {
+      HashMap<String, String> params = new HashMap<String, String>();
+      params.put(Engine.KEY_PARAM_UTTERANCE_ID, "" + curText);
+      File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
+      dir.mkdirs();
+      d("synthesizing " + texts[curText].substring(0,50) + "...");
+      if (tts.synthesizeToFile(texts[curText], params, dir + "/tts" + curText + ".wav") != TextToSpeech.SUCCESS) {
+        throw new RuntimeException();
+      }
+      curText++;
+    } else {
+      d("finished");
+    }
   }
 
   @Override
